@@ -1,26 +1,21 @@
-import React, { ChangeEvent } from 'react';
-import axios from 'axios';
-import { Button, Input, Row, Col, message } from 'antd';
-import dotenv from 'dotenv';
-import AxiosApi from '../interface';
+import React, { ChangeEvent, useEffect } from "react";
+import axios from "axios";
+import { Button, Input, Row, Col, message } from "antd";
+import "antd/dist/reset.css";
+import { EnResponseType } from "../common/enType";
+import { IAuthParams } from "../common/authInterface";
+import api from "../config/api";
+import { url } from "../common/url";
 
-// dotenv.config();
+//api url
 
 // const api: AxiosApi = {}
 // 로그인 , 회원가입 로그인 구분자로 분기되는 컴포넌트
 const Auth = () => {
-  const [id, setId] = React.useState<string>('');
-  const [pwd, setPwd] = React.useState<string>('');
-  const [nickName, setNickName] = React.useState<string>('');
+  const [id, setId] = React.useState<string>("");
+  const [pwd, setPwd] = React.useState<string>("");
+  const [nickName, setNickName] = React.useState<string>("");
   const [isSignUp, setIsSignUp] = React.useState<boolean>(false); //로그인 유무로 화면 분기 state
-  const [messageApi] = message.useMessage();
-
-  const warning = (msg: string) => {
-    messageApi.open({
-      type: 'warning',
-      content: msg
-    });
-  };
 
   // 아이디 인풋 핸들러
   const handleIdOnChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -39,39 +34,65 @@ const Auth = () => {
     setNickName(value);
   };
 
-  //로그인, 회원가입 onclick button
   const handleAuthOnclick = () => {
-    const params = { userId: id, password: pwd };
-    axios.post('http://52.79.226.246/auth/signin', params).then((response) => {
-      console.log(response.request);
-
-      console.log(response.request.status);
-      if (response.request.status) {
-        const { status } = response.request;
-
-        if (status === 400) {
-          const { data } = response;
-          console.log(data.message);
-
-          warning(data.message);
+    const params: IAuthParams = { userId: id, password: pwd };
+    api
+      .post(url.SignIn, params)
+      .then((response) => {
+        const { status } = response;
+        if (status === EnResponseType.success) {
+          message.info("로그인 성공");
+        }
+      })
+      .catch((error) => {
+        const { status } = error.response;
+        const { data } = error.response;
+        if (status === EnResponseType.error) {
+          const msg = data.message;
+          message.error(msg);
         } else {
         }
-      }
-    });
+      });
+  };
+
+  const handleSignUpOnclick = () => {
+    const params: IAuthParams = {
+      userId: id,
+      password: pwd,
+      nickname: nickName,
+    };
+    api
+      .post(url.SignUp, params)
+      .then((response) => {
+        const { status } = response;
+        if (status === EnResponseType.success) {
+          message.info("회원가입 성공");
+          handleSignOnclick(); //로그인 페이지로 전환.
+        }
+      })
+      .catch((error) => {
+        const { status } = error.response;
+        const { data } = error.response;
+        if (status === EnResponseType.error) {
+          const msg = data.message;
+          message.error(msg);
+        } else {
+        }
+      });
   };
 
   const handleSignOnclick = () => {
     // 회원가입 로그인 분기처리
     if (isSignUp === false) {
       setIsSignUp(true);
-      setId('');
-      setPwd('');
-      setNickName('');
+      setId("");
+      setPwd("");
+      setNickName("");
     } else {
       setIsSignUp(false);
-      setId('');
-      setPwd('');
-      setNickName('');
+      setId("");
+      setPwd("");
+      setNickName("");
     }
   };
 
@@ -95,16 +116,24 @@ const Auth = () => {
           ) : null}
 
           <Row>
-            <Col span={24}>
-              <Button type='primary' onClick={handleAuthOnclick}>
-                {isSignUp ? '회원가입' : '로그인'}
-              </Button>
-            </Col>
+            {isSignUp ? (
+              <Col span={24}>
+                <Button type="primary" onClick={handleSignUpOnclick}>
+                  {"회원가입"}
+                </Button>
+              </Col>
+            ) : (
+              <Col span={24}>
+                <Button type="primary" onClick={handleAuthOnclick}>
+                  {"로그인"}
+                </Button>
+              </Col>
+            )}
           </Row>
           <Row>
-            {' '}
-            <Button type='primary' onClick={handleSignOnclick}>
-              {isSignUp ? '로그인 하러가기' : '회원가입 하러가기'}
+            {" "}
+            <Button type="primary" onClick={handleSignOnclick}>
+              {isSignUp ? "로그인 하러가기" : "회원가입 하러가기"}
             </Button>
           </Row>
         </Col>
